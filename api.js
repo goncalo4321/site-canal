@@ -3,7 +3,7 @@
 // 2. Crie uma chave de API
 // 3. Cole a chave abaixo entre as aspas
 
-export const YOUTUBE_API_KEY = 'COLE_SUA_CHAVE_DE_API_AQUI';
+export const YOUTUBE_API_KEY = 'AIzaSyBJr-XbSuoON_bBsRDf_FpQynWNIYOoees';
 
 // ID do seu canal (será preenchido automaticamente na primeira execução)
 export let CHANNEL_ID = '';
