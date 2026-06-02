@@ -199,7 +199,8 @@ html {
 
 .container {
     display: flex;
-    gap: 30px;
+    flex-direction: column;
+    gap: 60px;
 }
 
 .videos-section {
@@ -402,12 +403,6 @@ html {
     font-size: 28px;
 }
 
-.stat-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-}
-
 .stat-number {
     font-size: 20px;
     font-weight: bold;
@@ -486,6 +481,87 @@ html {
     color: var(--text-secondary);
 }
 
+/* ==================== SECRET PLAYER MODAL ==================== */
+.secret-player-modal {
+    max-width: 1000px;
+    max-height: 95vh;
+}
+
+.secret-player-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--surface-light) 0%, var(--surface) 100%);
+}
+
+.secret-player-header h2 {
+    font-size: 28px;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.secret-player-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.secret-search-container {
+    padding: 20px 30px;
+    display: flex;
+    gap: 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.secret-search-input {
+    flex: 1;
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.secret-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+}
+
+.secret-search-btn {
+    background: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.secret-search-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.secret-player-container {
+    width: 100%;
+    padding: 20px 30px;
+    background: var(--surface);
+}
+
+.secret-player-container iframe {
+    border-radius: 10px;
+    background: var(--background);
+}
+
+.secret-results {
+    padding: 20px 30px;
+    color: var(--text-secondary);
+}
+
 /* ==================== FOOTER ==================== */
 .footer {
     background: var(--surface);
@@ -510,6 +586,15 @@ html {
 .footer a:hover {
     color: var(--primary-dark);
     text-decoration: underline;
+}
+
+.secret-hint {
+    font-size: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    opacity: 0.7;
+    font-style: italic;
 }
 
 /* ==================== RESPONSIVE ==================== */
@@ -558,6 +643,26 @@ html {
     .channel-details h1 {
         font-size: 20px;
     }
+
+    .secret-search-container {
+        flex-direction: column;
+    }
+
+    .secret-player-header {
+        padding: 15px 20px;
+    }
+
+    .secret-search-container {
+        padding: 15px 20px;
+    }
+
+    .secret-player-container {
+        padding: 15px 20px;
+    }
+
+    .secret-results {
+        padding: 15px 20px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -580,6 +685,16 @@ html {
     .modal-close {
         top: 10px;
         right: 10px;
+    }
+
+    .secret-search-input {
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .secret-search-btn {
+        padding: 10px 20px;
+        font-size: 14px;
     }
 }
 
