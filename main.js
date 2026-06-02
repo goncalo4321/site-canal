@@ -2,6 +2,8 @@ import {
     YOUTUBE_API_KEY,
     getChannelId,
     getChannelShorts,
+    getChannelVideos,
+    getVideoDetails,
     getChannelStats,
     getVideoStats,
     getVideoComments,
@@ -36,15 +38,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carrega dados iniciais
     await loadChannelData();
-    await loadVideos();
     await loadShorts();
+    await loadVideos();
 
     // Atualiza dados periodicamente
     setInterval(async () => {
         console.log('Atualizando dados...');
         await loadChannelData();
-        await loadVideos();
         await loadShorts();
+        await loadVideos();
     }, REFRESH_INTERVAL);
 
     // Hotkey para abrir secret player
@@ -117,21 +119,39 @@ async function loadChannelData() {
     }
 }
 
+// ==================== CARREGAR SHORTS ====================
+async function loadShorts() {
+    try {
+        const shorts = await getChannelShorts(currentChannelId);
+        
+        if (!shorts || shorts.length === 0) {
+            console.log('Nenhum short encontrado');
+            return;
+        }
+
+        allShorts = shorts;
+        await renderVideos(allShorts, 'shortsGrid');
+    } catch (error) {
+        console.error('Erro ao carregar shorts:', error);
+    }
+}
+
 // ==================== CARREGAR VÍDEOS ====================
 async function loadVideos() {
     try {
-        const videos = await getChannelShorts(currentChannelId);
+        const videos = await getChannelVideos(currentChannelId);
         
-        if (!videos) {
+        if (!videos || videos.length === 0) {
             showError('Nenhum vídeo encontrado');
             return;
         }
 
-        // Filtra vídeos que NÃO são shorts (duração > 60 segundos)
+        // Filtra vídeos regulares (exclui shorts)
         allVideos = videos.filter(video => {
-            const duration = video.contentDetails?.duration || 'PT0S';
-            const seconds = parseISO8601Duration(duration);
-            return seconds > 60; // Vídeos com mais de 60 segundos
+            const title = video.snippet.title.toLowerCase();
+            const description = (video.snippet.description || '').toLowerCase();
+            // Exclui vídeos que têm 'short' no título ou descrição
+            return !title.includes('short') && !description.includes('#shorts');
         });
 
         await renderVideos(allVideos, 'videosGrid');
@@ -139,40 +159,6 @@ async function loadVideos() {
         console.error('Erro ao carregar vídeos:', error);
         showError('Erro ao carregar vídeos');
     }
-}
-
-// ==================== CARREGAR SHORTS ====================
-async function loadShorts() {
-    try {
-        const videos = await getChannelShorts(currentChannelId);
-        
-        if (!videos) {
-            return;
-        }
-
-        // Filtra apenas shorts (duração <= 60 segundos)
-        allShorts = videos.filter(video => {
-            const duration = video.contentDetails?.duration || 'PT0S';
-            const seconds = parseISO8601Duration(duration);
-            return seconds <= 60; // Shorts com até 60 segundos
-        });
-
-        await renderVideos(allShorts, 'shortsGrid');
-    } catch (error) {
-        console.error('Erro ao carregar shorts:', error);
-    }
-}
-
-// ==================== PARSE ISO 8601 DURATION ====================
-function parseISO8601Duration(duration) {
-    const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
-    const matches = duration.match(regex);
-    
-    const hours = parseInt(matches[1] || 0);
-    const minutes = parseInt(matches[2] || 0);
-    const seconds = parseInt(matches[3] || 0);
-    
-    return hours * 3600 + minutes * 60 + seconds;
 }
 
 // ==================== RENDERIZAR VÍDEOS ====================
@@ -336,8 +322,8 @@ async function refreshData() {
     btn.style.animation = 'spin 1s linear';
     
     await loadChannelData();
-    await loadVideos();
     await loadShorts();
+    await loadVideos();
     
     setTimeout(() => {
         btn.style.animation = '';
