@@ -29,9 +29,29 @@ export async function getChannelId(channelName) {
 }
 
 /**
- * Busca vídeos shorts do canal
+ * Busca YouTube Shorts do canal (vídeos que o YouTube considera Shorts)
+ * Shorts têm resolução vertical e são detectados pela API
  */
 export async function getChannelShorts(channelId) {
+  try {
+    // Busca vídeos com query "shorts" para detectar conteúdo de Shorts
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&q=shorts&order=date&key=${YOUTUBE_API_KEY}&maxResults=50`
+    );
+    const data = await response.json();
+    
+    if (data.items) {
+      return data.items;
+    }
+  } catch (error) {
+    console.error('Erro ao buscar shorts:', error);
+  }
+}
+
+/**
+ * Busca todos os vídeos do canal
+ */
+export async function getChannelVideos(channelId) {
   try {
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&key=${YOUTUBE_API_KEY}&maxResults=50`
@@ -42,7 +62,33 @@ export async function getChannelShorts(channelId) {
       return data.items;
     }
   } catch (error) {
-    console.error('Erro ao buscar shorts:', error);
+    console.error('Erro ao buscar vídeos:', error);
+  }
+}
+
+/**
+ * Busca detalhes dos vídeos incluindo duração
+ */
+export async function getVideoDetails(videoIds) {
+  try {
+    const idsString = videoIds.join(',');
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${idsString}&key=${YOUTUBE_API_KEY}`
+    );
+    const data = await response.json();
+    
+    if (data.items) {
+      return data.items.reduce((acc, item) => {
+        acc[item.id] = {
+          duration: item.contentDetails.duration,
+          title: item.snippet.title,
+          thumbnail: item.snippet.thumbnails.high.url
+        };
+        return acc;
+      }, {});
+    }
+  } catch (error) {
+    console.error('Erro ao buscar detalhes dos vídeos:', error);
   }
 }
 
