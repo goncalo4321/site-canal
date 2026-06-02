@@ -16,6 +16,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutos
 let currentChannelId = localStorage.getItem('channelId') || '';
 let videosCache = [];
 let allVideos = [];
+let allShorts = [];
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -36,14 +37,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Carrega dados iniciais
     await loadChannelData();
     await loadVideos();
+    await loadShorts();
 
     // Atualiza dados periodicamente
     setInterval(async () => {
         console.log('Atualizando dados...');
         await loadChannelData();
         await loadVideos();
+        await loadShorts();
     }, REFRESH_INTERVAL);
+
+    // Hotkey para abrir secret player
+    setupSecretPlayerHotkey();
 });
+
+// ==================== SECRET PLAYER HOTKEY ====================
+function setupSecretPlayerHotkey() {
+    document.addEventListener('keydown', (e) => {
+        // ALT + P para abrir o secret player
+        if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+            e.preventDefault();
+            openSecretPlayer();
+        }
+    });
+}
+
+function openSecretPlayer() {
+    const modal = document.getElementById('secretPlayerModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('secretSearchInput').focus();
+}
+
+function closeSecretPlayer() {
+    const modal = document.getElementById('secretPlayerModal');
+    modal.classList.add('hidden');
+    document.getElementById('secretPlayerFrame').src = '';
+    document.getElementById('secretSearchInput').value = '';
+    document.getElementById('secretResults').innerHTML = '';
+    document.body.style.overflow = 'auto';
+}
+
+function performSecretSearch() {
+    const query = document.getElementById('secretSearchInput').value.trim();
+    if (!query) return;
+
+    // Cria URL de busca do YouTube
+    const searchUrl = `https://www.youtube.com/embed/search?list=${encodeURIComponent(query)}`;
+    document.getElementById('secretPlayerFrame').src = searchUrl;
+}
+
+function handleSecretSearch(event) {
+    if (event.key === 'Enter') {
+        performSecretSearch();
+    }
+}
 
 // ==================== CARREGAR DADOS DO CANAL ====================
 async function loadChannelData() {
@@ -72,31 +120,68 @@ async function loadChannelData() {
 // ==================== CARREGAR VÍDEOS ====================
 async function loadVideos() {
     try {
-        showLoading(true);
         const videos = await getChannelShorts(currentChannelId);
         
         if (!videos) {
             showError('Nenhum vídeo encontrado');
-            showLoading(false);
             return;
         }
 
-        allVideos = videos;
-        await renderVideos(videos);
-        showLoading(false);
+        // Filtra vídeos que NÃO são shorts (duração > 60 segundos)
+        allVideos = videos.filter(video => {
+            const duration = video.contentDetails?.duration || 'PT0S';
+            const seconds = parseISO8601Duration(duration);
+            return seconds > 60; // Vídeos com mais de 60 segundos
+        });
+
+        await renderVideos(allVideos, 'videosGrid');
     } catch (error) {
         console.error('Erro ao carregar vídeos:', error);
         showError('Erro ao carregar vídeos');
     }
 }
 
+// ==================== CARREGAR SHORTS ====================
+async function loadShorts() {
+    try {
+        const videos = await getChannelShorts(currentChannelId);
+        
+        if (!videos) {
+            return;
+        }
+
+        // Filtra apenas shorts (duração <= 60 segundos)
+        allShorts = videos.filter(video => {
+            const duration = video.contentDetails?.duration || 'PT0S';
+            const seconds = parseISO8601Duration(duration);
+            return seconds <= 60; // Shorts com até 60 segundos
+        });
+
+        await renderVideos(allShorts, 'shortsGrid');
+    } catch (error) {
+        console.error('Erro ao carregar shorts:', error);
+    }
+}
+
+// ==================== PARSE ISO 8601 DURATION ====================
+function parseISO8601Duration(duration) {
+    const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+    const matches = duration.match(regex);
+    
+    const hours = parseInt(matches[1] || 0);
+    const minutes = parseInt(matches[2] || 0);
+    const seconds = parseInt(matches[3] || 0);
+    
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
 // ==================== RENDERIZAR VÍDEOS ====================
-async function renderVideos(videos) {
-    const grid = document.getElementById('videosGrid');
+async function renderVideos(videos, gridId) {
+    const grid = document.getElementById(gridId);
     grid.innerHTML = '';
 
     if (videos.length === 0) {
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">Nenhum vídeo disponível</p>';
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">Nenhum conteúdo disponível</p>';
         return;
     }
 
@@ -252,6 +337,7 @@ async function refreshData() {
     
     await loadChannelData();
     await loadVideos();
+    await loadShorts();
     
     setTimeout(() => {
         btn.style.animation = '';
@@ -261,16 +347,29 @@ async function refreshData() {
 // ==================== FECHAR MODAL COM ESC ====================
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        closeModal();
+        const videoModal = document.getElementById('videoModal');
+        const secretModal = document.getElementById('secretPlayerModal');
+        
+        if (!videoModal.classList.contains('hidden')) {
+            closeModal();
+        } else if (!secretModal.classList.contains('hidden')) {
+            closeSecretPlayer();
+        }
     }
 });
 
 // ==================== FECHAR MODAL AO CLICAR FORA ====================
 document.addEventListener('click', (e) => {
-    const modal = document.getElementById('videoModal');
-    const modalContent = document.querySelector('.modal-content');
+    const videoModal = document.getElementById('videoModal');
+    const secretModal = document.getElementById('secretPlayerModal');
+    const videoModalContent = document.querySelector('#videoModal .modal-content');
+    const secretModalContent = document.querySelector('#secretPlayerModal .modal-content');
     
-    if (e.target === modal && !modalContent.contains(e.target)) {
+    if (e.target === videoModal && !videoModalContent.contains(e.target)) {
         closeModal();
+    }
+    
+    if (e.target === secretModal && !secretModalContent.contains(e.target)) {
+        closeSecretPlayer();
     }
 });
